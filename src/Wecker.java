@@ -103,6 +103,7 @@ public class Wecker extends JFrame {
                 Wecker.minClicks--;
                     zeit.setText(displayTime());
                 if (minClicks == 3) {
+                    setState(NORMAL);
                     setAlwaysOnTop(true);
                 }
                 if (minClicks == 2) {
@@ -118,6 +119,7 @@ public class Wecker extends JFrame {
                     minusTen.setEnabled(true);
                     minusFive.setEnabled(true);
                     minusOne.setEnabled(true);
+                    setAlwaysOnTop(false);
                     java.awt.Toolkit.getDefaultToolkit().beep();
                     if(display5Next){
                         minClicks = 5*60;
