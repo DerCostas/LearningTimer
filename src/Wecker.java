@@ -16,6 +16,7 @@ public class Wecker extends JFrame {
     ImageIcon icon = new ImageIcon("D:\\programming\\timer\\lerning timer\\Resources\\sanduhr.png");
     private JButton plusTen, plusFive, plusOne, minusTen, minusFive, minusOne, start, reset, pause;
     private JPanel minusSide, plusSide, startReset;
+    private static final float VOLUME_FACTOR = 0.7f; // Adjust this factor for desired volume
 
     private final Color defaultLabelColor;
 
@@ -159,6 +160,10 @@ public class Wecker extends JFrame {
 
                 Clip clip = AudioSystem.getClip();
                 clip.open(audioInputStream);
+                FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                float range = gainControl.getMaximum() - gainControl.getMinimum();
+                float gain = (range * VOLUME_FACTOR) + gainControl.getMinimum();
+                gainControl.setValue(gain);
                 clip.start();
             }
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
