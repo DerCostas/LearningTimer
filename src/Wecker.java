@@ -1,7 +1,10 @@
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Wecker extends JFrame {
 
@@ -14,10 +17,13 @@ public class Wecker extends JFrame {
     private JButton plusTen, plusFive, plusOne, minusTen, minusFive, minusOne, start, reset, pause;
     private JPanel minusSide, plusSide, startReset;
 
+    private final Color defaultLabelColor;
+
     public Wecker() {
         bauen();
         addButton();
         methoden();
+        defaultLabelColor = zeit.getBackground();
     }
 
     public static void main(String[] args) {
@@ -26,7 +32,7 @@ public class Wecker extends JFrame {
     }
 
     public void bauen() {
-        this.setSize(380, 330);
+        this.setSize(400, 280);
         this.setLocationRelativeTo(null);
         this.setTitle("Timer");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -35,42 +41,58 @@ public class Wecker extends JFrame {
         this.requestFocus();
         this.setIconImage(icon.getImage());
 
-        plusTen = new JButton("+ 10");
-        plusTen.setFont(new Font("Verdana", Font.BOLD, 24));
-        plusTen.addActionListener(new plusTenAction());
-        plusFive = new JButton("+ 5");
-        plusFive.setFont(new Font("Verdana", Font.BOLD, 24));
-        plusFive.addActionListener(new plusFiveAction());
-        plusOne = new JButton("+ 1");
-        plusOne.setFont(new Font("Verdana", Font.BOLD, 24));
-        plusOne.addActionListener(new plusOneAction());
-        minusTen = new JButton("- 10");
-        minusTen.setFont(new Font("Verdana", Font.BOLD, 24));
-        minusTen.addActionListener(new minusTenAction());
-        minusFive = new JButton("- 5");
-        minusFive.setFont(new Font("Verdana", Font.BOLD, 24));
-        minusFive.addActionListener(new minusFiveAction());
-        minusOne = new JButton("- 1");
-        minusOne.setFont(new Font("Verdana", Font.BOLD, 24));
-        minusOne.addActionListener(new minusOneAction());
-        pause = new JButton("Pause");
-        pause.setFont(new Font("Verdana", Font.BOLD, 14));
-        pause.addActionListener(new PauseAction());
+        plusTen = createButton("+ 10", 24, new plusTenAction());
+        plusFive = createButton("+ 5", 24, new plusFiveAction());
+        plusOne = createButton("+ 1", 24, new plusOneAction());
+        minusTen = createButton("- 10", 24, new minusTenAction());
+        minusFive = createButton("- 5", 24, new minusFiveAction());
+        minusOne = createButton("- 1", 24, new minusOneAction());
+
+        pause = createButton("Pause", 14, new PauseAction());
         pause.setEnabled(false);
 
-        start = new JButton("Start");
-        start.setFont(new Font("Verdana", Font.BOLD, 14));
-        start.addActionListener(new startAction());
-        reset = new JButton("Reset");
-        reset.setFont(new Font("Verdana", Font.BOLD, 14));
-        reset.addActionListener(new resetAction());
+        start = createButton("Start", 14, new startAction());
+        start.setBackground(Color.green);
+        reset = createButton("Reset", 14, new resetAction());
+
+        plusTen.addActionListener(new labelColourAction());
+        plusFive.addActionListener(new labelColourAction());
+        plusOne.addActionListener(new labelColourAction());
+        minusTen.addActionListener(new labelColourAction());
+        minusFive.addActionListener(new labelColourAction());
+        minusOne.addActionListener(new labelColourAction());
+        pause.addActionListener(new labelColourAction());
+        start.addActionListener(new labelColourAction());
+        reset.addActionListener(new labelColourAction());
+
         zeit = new JLabel("30:00");
         zeit.setHorizontalAlignment(JLabel.CENTER);
         zeit.setFont(new Font("Verdana", Font.PLAIN, 42));
         zeit.setOpaque(true);
         zeit.setBackground(null);
-    }
 
+        // Add component listeners to adjust the font size when the components are resized
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent evt) {
+                adjustTextSize(plusTen);
+                adjustTextSize(plusFive);
+                adjustTextSize(plusOne);
+                adjustTextSize(minusTen);
+                adjustTextSize(minusFive);
+                adjustTextSize(minusOne);
+                adjustTextSize(pause);
+                adjustTextSize(start);
+                adjustTextSize(reset);
+                adjustLabelTextSize(zeit);
+            }
+        });
+    }
+    private JButton createButton(String text, int fontSize, ActionListener action) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Verdana", Font.BOLD, fontSize));
+        button.addActionListener(action);
+        return button;
+    }
     public void addButton() {
 
         minusSide = new JPanel();
@@ -102,15 +124,10 @@ public class Wecker extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 Wecker.minClicks--;
                     zeit.setText(displayTime());
+                    zeit.setBackground(defaultLabelColor);
                 if (minClicks == 3) {
                     setState(NORMAL);
                     setAlwaysOnTop(true);
-                }
-                if (minClicks == 2) {
-                    java.awt.Toolkit.getDefaultToolkit().beep();
-                }
-                if (minClicks == 1) {
-                    java.awt.Toolkit.getDefaultToolkit().beep();
                 }
                 if (minClicks == 0) {
                     Wecker.timer.stop();
@@ -120,7 +137,7 @@ public class Wecker extends JFrame {
                     minusFive.setEnabled(true);
                     minusOne.setEnabled(true);
                     setAlwaysOnTop(false);
-                    java.awt.Toolkit.getDefaultToolkit().beep();
+                    playBuiltInSound("boxing-bell.wav");
                     if(display5Next){
                         minClicks = 5*60;
                         display5Next = !display5Next;
@@ -128,10 +145,26 @@ public class Wecker extends JFrame {
                         minClicks = 30*60;
                         display5Next = !display5Next;
                     }
+                    zeit.setBackground(Color.green);
                     zeit.setText(displayTime());
                 }
             }
         });
+    }
+
+    public void playBuiltInSound(String resourcePath) {
+        try (InputStream soundStream = getClass().getResourceAsStream(resourcePath)) {
+            if (soundStream != null) {
+                AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundStream);
+
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioInputStream);
+                clip.start();
+            }
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            System.err.println("Exception during sound playback: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public String displayTime() {
@@ -141,14 +174,16 @@ public class Wecker extends JFrame {
         } else return ("" + minClicks / 60 + ":00");
     }
 
+    private class labelColourAction implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            zeit.setBackground(defaultLabelColor);
+        }
+    }
     private class plusTenAction implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             minClicks += 600;
             zeit.setText(displayTime());
-            if (minClicks > 0) {
-                start.setBackground(Color.green);
-            }
-
+            setStartColour();
         }
     }
 
@@ -156,9 +191,7 @@ public class Wecker extends JFrame {
         public void actionPerformed(ActionEvent e) {
             minClicks += 300;
             zeit.setText(displayTime());
-            if (minClicks > 0) {
-                start.setBackground(Color.green);
-            }
+            setStartColour();
         }
     }
 
@@ -166,9 +199,7 @@ public class Wecker extends JFrame {
         public void actionPerformed(ActionEvent e) {
             minClicks += 60;
             zeit.setText(displayTime());
-            if (minClicks > 0) {
-                start.setBackground(Color.green);
-            }
+            setStartColour();
         }
     }
 
@@ -177,9 +208,7 @@ public class Wecker extends JFrame {
             if (minClicks >= 1) {
                 minClicks -= 600;
             }
-            if (minClicks == 0) {
-                start.setBackground(null);
-            }
+            setStartColour();
             zeit.setText(displayTime());
         }
     }
@@ -189,9 +218,7 @@ public class Wecker extends JFrame {
             if (minClicks >= 1) {
                 minClicks -= 300;
             }
-            if (minClicks == 0) {
-                start.setBackground(null);
-            }
+            setStartColour();
             zeit.setText(displayTime());
         }
     }
@@ -201,9 +228,7 @@ public class Wecker extends JFrame {
             if (minClicks >= 1) {
                 minClicks -= 60;
             }
-            if (minClicks == 0) {
-                start.setBackground(null);
-            }
+            setStartColour();
             zeit.setText(displayTime());
         }
     }
@@ -230,6 +255,7 @@ public class Wecker extends JFrame {
                 minusFive.setEnabled(false);
                 minusOne.setEnabled(false);
                 pause.setEnabled(true);
+                start.setBackground(null);
             }
         }
     }
@@ -247,6 +273,66 @@ public class Wecker extends JFrame {
                 pause.setText("Pause");
             }
         }
+    }
+
+    private void setStartColour(){
+        if (minClicks > 0) {
+            start.setBackground(Color.green);
+        }else{
+            start.setBackground(null);
+        }
+    }
+
+    private void adjustTextSize(JComponent component) {
+        int width = component.getWidth();
+        int height = component.getHeight();
+
+        // Calculate the new font size based on the component size
+        int fontSize = (int) (Math.min(width, height) * 0.5);
+
+        // Set the new font size for the component
+        Font currentFont = component.getFont();
+        Font newFont = currentFont.deriveFont((float) fontSize);
+        component.setFont(newFont);
+    }
+
+    private void adjustLabelTextSize(JLabel label) {
+        int width = label.getWidth();
+        int height = label.getHeight();
+        Font currentFont = label.getFont();
+
+        // Create a FontMetrics object to measure text dimensions
+        FontMetrics fontMetrics = label.getFontMetrics(currentFont);
+        String labelText = label.getText();
+        int textWidth = fontMetrics.stringWidth(labelText);
+        int textHeight = fontMetrics.getHeight();
+
+        // Calculate the new font size based on the component size
+        int fontSize = calculateMaxFontSize(currentFont, labelText, width, height);
+
+        // Set the new font size for the label
+        Font newFont = currentFont.deriveFont((float) fontSize);
+        label.setFont(newFont);
+    }
+
+    private int calculateMaxFontSize(Font font, String text, int maxWidth, int maxHeight) {
+        // Create a temporary JLabel to measure the preferred size of the text
+        JLabel tempLabel = new JLabel(text);
+        tempLabel.setFont(font);
+
+        // Get the preferred size of the text
+        Dimension preferredSize = tempLabel.getPreferredSize();
+
+        // Calculate the maximum font size that fits within the maxWidth and maxHeight
+        int widthRatio = (int) Math.floor((double) maxWidth / preferredSize.width);
+        int heightRatio = (int) Math.floor((double) maxHeight / preferredSize.height);
+
+        // Use the smaller ratio to ensure that the text fits both in width and height
+        int maxFontSize = (int) (font.getSize() * Math.min(widthRatio, heightRatio));
+
+        // Set a minimum font size to prevent the text from becoming too small
+        int minFontSize = 10; // Adjust as needed
+        return Math.max(maxFontSize, minFontSize);
     }
 
 }
