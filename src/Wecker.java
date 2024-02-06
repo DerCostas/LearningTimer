@@ -6,18 +6,19 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
 
+
 public class Wecker extends JFrame {
 
     private static final long serialVersionUID = 1L;
     public static int minClicks = 1800;
     public static Timer timer;
+    private boolean top = false;
     JLabel zeit;
     boolean display5Next = true;
     ImageIcon icon = new ImageIcon("D:\\programming\\timer\\lerning timer\\Resources\\sanduhr.png");
-    private JButton plusTen, plusFive, plusOne, minusTen, minusFive, minusOne, start, reset, pause;
-    private JPanel minusSide, plusSide, startReset;
+    private JButton plusTen, plusFive, plusOne, minusTen, minusFive, minusOne, start, reset, pause, alwaysTop;
+    private JPanel minusSide, plusSide, startReset, resetTop;
     private static final float VOLUME_FACTOR = 0.7f; // Adjust this factor for desired volume
-
     private final Color defaultLabelColor;
 
     public Wecker() {
@@ -49,12 +50,15 @@ public class Wecker extends JFrame {
         minusFive = createButton("- 5", 24, new minusFiveAction());
         minusOne = createButton("- 1", 24, new minusOneAction());
 
+
         pause = createButton("Pause", 14, new PauseAction());
         pause.setEnabled(false);
 
         start = createButton("Start", 14, new startAction());
         start.setBackground(Color.green);
         reset = createButton("Reset", 14, new resetAction());
+
+        alwaysTop = createButton("Always Top", 14, new AlwaysTopAction());
 
         plusTen.addActionListener(new labelColourAction());
         plusFive.addActionListener(new labelColourAction());
@@ -85,6 +89,7 @@ public class Wecker extends JFrame {
                 adjustTextSize(start);
                 adjustTextSize(reset);
                 adjustLabelTextSize(zeit);
+                adjustTextSize(alwaysTop);
             }
         });
     }
@@ -113,10 +118,15 @@ public class Wecker extends JFrame {
         startReset.add(start);
         startReset.add(reset);
 
+        resetTop = new JPanel();
+        resetTop.setLayout(new GridLayout(1, 2));
+        resetTop.add(pause);
+        resetTop.add(alwaysTop);
+
         getContentPane().add(startReset, BorderLayout.PAGE_START);
         getContentPane().add(plusSide, BorderLayout.LINE_START);
         getContentPane().add(minusSide, BorderLayout.LINE_END);
-        getContentPane().add(pause, BorderLayout.PAGE_END);
+        getContentPane().add(resetTop, BorderLayout.PAGE_END);
         getContentPane().add(zeit, BorderLayout.CENTER);
     }
 
@@ -276,6 +286,21 @@ public class Wecker extends JFrame {
                 timer.start();
                 zeit.setText(displayTime());
                 pause.setText("Pause");
+            }
+        }
+    }
+
+    private class AlwaysTopAction implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+
+            if (top){
+                setAlwaysOnTop(false);
+                top = false;
+                alwaysTop.setBackground(defaultLabelColor);
+            } else {
+                setAlwaysOnTop(true);
+                top = true;
+                alwaysTop.setBackground(Color.GREEN);
             }
         }
     }
