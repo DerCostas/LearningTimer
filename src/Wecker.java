@@ -138,7 +138,9 @@ public class Wecker extends JFrame {
                     zeit.setBackground(defaultLabelColor);
                 if (minClicks == 3) {
                     setState(NORMAL);
-                    setAlwaysOnTop(true);
+                    if(!top){
+                        setAlwaysOnTop(true);
+                    }
                 }
                 if (minClicks == 0) {
                     Wecker.timer.stop();
@@ -147,7 +149,9 @@ public class Wecker extends JFrame {
                     minusTen.setEnabled(true);
                     minusFive.setEnabled(true);
                     minusOne.setEnabled(true);
-                    setAlwaysOnTop(false);
+                    if(!top){
+                        setAlwaysOnTop(false);
+                    }
                     playBuiltInSound("boxing-bell.wav");
                     if(display5Next){
                         minClicks = 5*60;
